@@ -14,6 +14,7 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
+import datetime
 import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -25,7 +26,7 @@ from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler)
 
-from config.auth import token
+from config.auth import token, gmail_user, gmail_password, gmail_dest
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -42,10 +43,11 @@ def start(update, context):
     update.message.reply_text(
         '¡Hola! Este bot te ayudará a informar de una incidencia.\n\n'
         'Escribe /cancelar para parar en cualquier momento.\n'
-        '(Ojo a la barra «/» al introducir comandos)'
+        '(Ojo a la barra «`/`» al introducir comandos)'
         '\n\n'
         'Si no recibes respuesta, es posible que tenga algún problema (todavía'
-        ' estoy en pruebas). Usa el correo electrónico entonces.'
+        ' estoy en pruebas). Usa el correo electrónico entonces o contacta '
+        'directamente conmigo en https://t.me/frbogado.'
         '\n\n'
         'Antes de empezar, asegúrate de que has reiniciado el ordenador o '
         'has cerrado sesión **por completo** y vuelto a hacer __login__ si eres '
@@ -90,9 +92,11 @@ def captura(update, context):
     captura = fotoname
     logger.info("Captura de %s: %s", user.first_name, fotoname)
     update.message.reply_text('¡Genial! Ahora descríbeme el problema con todos'
-                              'los detalles que puedas o escribe /saltar.'
+                              ' los detalles que puedas o escribe /saltar.'
                               'Cuantos más detalles proporciones, más rápido '
-                              'podré ayudarte.')
+                              'podré ayudarte. No olvides incluir una forma de'
+                              ' contactar contigo (preferiblemente una '
+                              '**dirección de correo electrónico**)')
 
     context.user_data['captura'] = captura
     return DESCRIPCION
@@ -105,7 +109,9 @@ def skip_captura(update, context):
                               'del problema. Puedes saltar este paso tamién '
                               'escribiendo /saltar.\n\n'
                               'Cuéntame todo lo que puedas acerca de la '
-                              'incidencia.')
+                              'incidencia. No olvides incluir una forma de '
+                              'contactar contigo (preferiblemente una '
+                              '**dirección de correo electrónico**)')
 
     return DESCRIPCION
 
@@ -118,7 +124,7 @@ def descripcion(update, context):
     update.message.reply_text('¡Gracias! Me podré en contacto contigo lo antes'
                               ' posible.')
     context.user_data['descripcion'] = descripcion
-    asunto = "{}: Incidencia de {}".format(user_data['gravedad'], user.full_name)
+    asunto = "{}: Incidencia de {}".format(context.user_data['gravedad'], user.full_name)
     cuerpo = context.user_data['descripcion']
     adjunto = context.user_data['captura']
     send_mail(asunto, cuerpo, adjunto)
@@ -176,9 +182,9 @@ def main():
 def send_mail(asunto, texto, adjunto):
     """Envía un correo con el asunto, texto y adjunto recibidos desde la
     cuenta de informática a la cuenta de incidencias."""
-    rte = config.gmail_user
-    dest = config.gmail_dest
-    passwd = config.gmail_password
+    rte = gmail_user
+    dest = gmail_dest
+    passwd = gmail_password
     # https://www.geeksforgeeks.org/send-mail-attachment-gmail-account-using-python/
     fromaddr = rte
     toaddr = dest
