@@ -1,0 +1,7 @@
+bin
+config/auth.py
+*/__pycache__/*
+lib
+lib64
+share
+user_photo*.jpg
