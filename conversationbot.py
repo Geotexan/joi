@@ -126,7 +126,10 @@ def descripcion(update, context):
     context.user_data['descripcion'] = descripcion
     asunto = "{}: Incidencia de {}".format(context.user_data['gravedad'], user.full_name)
     cuerpo = context.user_data['descripcion']
-    adjunto = context.user_data['captura']
+    try:
+        adjunto = context.user_data['captura']
+    except KeyError:
+        adjunto = None
     send_mail(asunto, cuerpo, adjunto)
     return ConversationHandler.END
 
@@ -179,7 +182,7 @@ def main():
     updater.idle()
 
 
-def send_mail(asunto, texto, adjunto):
+def send_mail(asunto, texto, adjunto=None):
     """Envía un correo con el asunto, texto y adjunto recibidos desde la
     cuenta de informática a la cuenta de incidencias."""
     rte = gmail_user
@@ -200,18 +203,19 @@ def send_mail(asunto, texto, adjunto):
     body = texto
     # attach the body with the msg instance
     msg.attach(MIMEText(body, 'plain'))
-    # open the file to be sent
-    filename = adjunto
-    attachment = open(adjunto, "rb")
-    # instance of MIMEBase and named as p
-    p = MIMEBase('application', 'octet-stream')
-    # To change the payload into encoded form
-    p.set_payload((attachment).read())
-    # encode into base64
-    encoders.encode_base64(p)
-    p.add_header('Content-Disposition', "attachment; filename= %s" % filename)
-    # attach the instance 'p' to instance 'msg'
-    msg.attach(p)
+    if adjunto:
+        # open the file to be sent
+        filename = adjunto
+        attachment = open(adjunto, "rb")
+        # instance of MIMEBase and named as p
+        p = MIMEBase('application', 'octet-stream')
+        # To change the payload into encoded form
+        p.set_payload((attachment).read())
+        # encode into base64
+        encoders.encode_base64(p)
+        p.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+        # attach the instance 'p' to instance 'msg'
+        msg.attach(p)
     # creates SMTP session
     s = smtplib.SMTP('smtp.gmail.com', 587)
     # start TLS for security
