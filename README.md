@@ -4,3 +4,4 @@
 
 Bot de Telegram para registrar incidencias.
 
+Basado en el [ejemplo de robot conversacional de Telegram](https://github.com/python-telegram-bot/python-telegram-bot/tree/master/examples).
